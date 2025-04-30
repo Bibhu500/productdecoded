@@ -1,132 +1,38 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
-  ClipboardList,
   ArrowLeft,
-  ChevronRight,
-  AlertCircle,
+  BrainCircuit,
+  BadgeCheck,
   CheckCircle2,
-  XCircle,
-  RotateCcw,
-  Brain
+  Info
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-
-interface CaseStudy {
-  id: string;
-  title: string;
-  description: string;
-  difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
-  scenario: string;
-  questions: {
-    id: string;
-    text: string;
-    options: string[];
-    correctAnswer: number;
-    explanation: string;
-  }[];
-}
-
-const caseStudies: CaseStudy[] = [
-  {
-    id: 'manufacturing-defect',
-    title: 'Manufacturing Quality Issue',
-    description: 'Analyze a production line defect and identify the root cause',
-    difficulty: 'Beginner',
-    scenario: `A manufacturing company is experiencing a high rate of defective products in their assembly line. 
-    In the past week, 15% of products failed quality control, up from the usual 2%. The defects are primarily 
-    related to improper component alignment. Your task is to analyze the situation and identify the root cause.`,
-    questions: [
-      {
-        id: 'q1',
-        text: 'What should be your first step in analyzing this situation?',
-        options: [
-          'Immediately replace all assembly line workers',
-          'Collect and analyze recent quality control data',
-          'Shut down the production line',
-          'Order new components from suppliers'
-        ],
-        correctAnswer: 1,
-        explanation: 'The first step in RCA is to gather data and understand the problem scope. Quality control data will help identify patterns and potential contributing factors.'
-      },
-      {
-        id: 'q2',
-        text: 'Which of these observations would be most relevant to the investigation?',
-        options: [
-          'The cafeteria menu changed last week',
-          'A new shift supervisor started three weeks ago',
-          'The assembly line calibration was done two months ago',
-          'The alignment tools were recalibrated last week'
-        ],
-        correctAnswer: 3,
-        explanation: 'Since the defects are related to alignment issues, the recent recalibration of alignment tools is most relevant and could be directly related to the problem.'
-      }
-    ]
-  },
-  {
-    id: 'software-outage',
-    title: 'Software System Outage',
-    description: 'Investigate a critical system failure in a software application',
-    difficulty: 'Intermediate',
-    scenario: `A critical business application experienced an unexpected outage during peak hours, 
-    affecting thousands of users. The system was down for 2 hours, causing significant business impact. 
-    Initial reports show no recent code deployments or infrastructure changes.`,
-    questions: [
-      {
-        id: 'q1',
-        text: 'Which of these tools would be most appropriate for this RCA?',
-        options: [
-          'Fishbone Diagram',
-          '5 Whys Analysis',
-          'Fault Tree Analysis',
-          'Pareto Chart'
-        ],
-        correctAnswer: 2,
-        explanation: 'Fault Tree Analysis is ideal for complex systems where multiple factors could contribute to a failure, making it perfect for analyzing system outages.'
-      }
-    ]
-  }
-];
+import RcaScenario, { rcaScenarios, RcaScenarioData } from '../components/RcaScenario';
+import RcaChatInterface from '../components/RcaChatInterface';
 
 const Practice: React.FC = () => {
   const navigate = useNavigate();
-  const [selectedCase, setSelectedCase] = useState<string | null>(null);
-  const [userAnswers, setUserAnswers] = useState<{ [key: string]: number }>({});
-  const [showResults, setShowResults] = useState(false);
+  const [selectedScenario, setSelectedScenario] = useState<string | null>(null);
+  const [practiceStarted, setPracticeStarted] = useState(false);
+  const [completedEvaluation, setCompletedEvaluation] = useState<string | null>(null);
 
-  const handleCaseSelection = (caseId: string) => {
-    setSelectedCase(caseId);
-    setUserAnswers({});
-    setShowResults(false);
+  const handleScenarioSelection = (scenarioId: string) => {
+    setSelectedScenario(scenarioId);
+    setPracticeStarted(false);
+    setCompletedEvaluation(null);
   };
 
-  const handleAnswerSelection = (questionId: string, answerIndex: number) => {
-    setUserAnswers(prev => ({
-      ...prev,
-      [questionId]: answerIndex
-    }));
+  const handleStartPractice = () => {
+    setPracticeStarted(true);
   };
 
-  const handleSubmit = () => {
-    setShowResults(true);
+  const handlePracticeComplete = (evaluation: string) => {
+    setCompletedEvaluation(evaluation);
   };
 
-  const resetPractice = () => {
-    setUserAnswers({});
-    setShowResults(false);
-  };
-
-  const currentCase = caseStudies.find(c => c.id === selectedCase);
-  const allQuestionsAnswered = currentCase 
-    ? currentCase.questions.every(q => userAnswers[q.id] !== undefined)
-    : false;
-
-  const calculateScore = () => {
-    if (!currentCase) return 0;
-    const correctAnswers = currentCase.questions.filter(
-      q => userAnswers[q.id] === q.correctAnswer
-    ).length;
-    return (correctAnswers / currentCase.questions.length) * 100;
+  const getCurrentScenario = (): RcaScenarioData | undefined => {
+    return rcaScenarios.find(scenario => scenario.id === selectedScenario);
   };
 
   return (
@@ -145,8 +51,8 @@ const Practice: React.FC = () => {
               </button>
             </div>
             <div className="flex items-center">
-              <ClipboardList className="h-6 w-6 text-green-600" />
-              <span className="ml-2 text-xl font-semibold">Practice RCA</span>
+              <BrainCircuit className="h-6 w-6 text-blue-600" />
+              <span className="ml-2 text-xl font-semibold">RCA Practice</span>
             </div>
           </div>
         </div>
@@ -154,146 +60,123 @@ const Practice: React.FC = () => {
 
       {/* Main Content */}
       <div className="container mx-auto px-6 py-8">
-        <div className="grid md:grid-cols-3 gap-8">
-          {/* Case Studies List */}
-          <div className="md:col-span-1">
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h2 className="text-xl font-semibold mb-4">Case Studies</h2>
-              <div className="space-y-4">
-                {caseStudies.map(study => (
-                  <motion.button
-                    key={study.id}
-                    onClick={() => handleCaseSelection(study.id)}
-                    className={`w-full p-4 rounded-lg border transition-colors ${
-                      selectedCase === study.id
-                        ? 'border-green-500 bg-green-50'
-                        : 'border-gray-200 hover:border-green-500'
-                    }`}
-                    whileHover={{ y: -2 }}
-                  >
-                    <div className="flex justify-between items-start">
-                      <div className="text-left">
-                        <h3 className="font-semibold">{study.title}</h3>
-                        <p className="text-sm text-gray-600 mt-1">{study.description}</p>
-                      </div>
-                      <span className={`text-xs px-2 py-1 rounded ${
-                        study.difficulty === 'Beginner' ? 'bg-green-100 text-green-700' :
-                        study.difficulty === 'Intermediate' ? 'bg-yellow-100 text-yellow-700' :
-                        'bg-red-100 text-red-700'
-                      }`}>
-                        {study.difficulty}
-                      </span>
-                    </div>
-                  </motion.button>
-                ))}
+        {/* Header section */}
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="bg-white rounded-xl shadow-lg p-6 mb-8"
+        >
+          <div className="flex items-start md:items-center flex-col md:flex-row">
+            <div className="flex-1">
+              <h1 className="text-2xl font-bold text-gray-800">Interactive RCA Practice</h1>
+              <p className="text-gray-600 mt-2">
+                Practice your Root Cause Analysis skills with realistic product management scenarios. 
+                Interact with our AI assistant that simulates real stakeholder conversations.
+              </p>
+            </div>
+            <div className="mt-4 md:mt-0 bg-blue-50 p-4 rounded-lg flex items-start">
+              <Info className="h-5 w-5 text-blue-500 mr-2 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-sm text-blue-700">
+                  <strong>How it works:</strong> Select a scenario, ask clarifying questions, 
+                  and perform your analysis. The AI will provide guidance and feedback on your approach.
+                </p>
               </div>
             </div>
           </div>
+        </motion.div>
 
-          {/* Case Study Content */}
-          <div className="md:col-span-2">
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              {selectedCase && currentCase ? (
-                <div className="space-y-6">
-                  <div className="border-b pb-4">
-                    <h2 className="text-2xl font-bold">{currentCase.title}</h2>
-                    <p className="text-gray-600 mt-2">{currentCase.description}</p>
-                  </div>
-
-                  <div className="bg-blue-50 p-4 rounded-lg">
-                    <h3 className="font-semibold mb-2">Scenario:</h3>
-                    <p className="text-gray-700">{currentCase.scenario}</p>
-                  </div>
-
-                  <div className="space-y-8">
-                    {currentCase.questions.map((question, qIndex) => (
-                      <div key={question.id} className="space-y-4">
-                        <h4 className="font-semibold">
-                          Question {qIndex + 1}: {question.text}
-                        </h4>
-                        <div className="space-y-2">
-                          {question.options.map((option, index) => (
-                            <button
-                              key={index}
-                              onClick={() => handleAnswerSelection(question.id, index)}
-                              disabled={showResults}
-                              className={`w-full p-3 rounded-lg border text-left transition-colors ${
-                                userAnswers[question.id] === index
-                                  ? showResults
-                                    ? index === question.correctAnswer
-                                      ? 'bg-green-100 border-green-500'
-                                      : 'bg-red-100 border-red-500'
-                                    : 'bg-blue-50 border-blue-500'
-                                  : 'border-gray-200 hover:border-blue-500'
-                              }`}
-                            >
-                              <div className="flex items-center justify-between">
-                                <span>{option}</span>
-                                {showResults && userAnswers[question.id] === index && (
-                                  index === question.correctAnswer
-                                    ? <CheckCircle2 className="w-5 h-5 text-green-500" />
-                                    : <XCircle className="w-5 h-5 text-red-500" />
-                                )}
-                              </div>
-                            </button>
-                          ))}
-                        </div>
-                        {showResults && (
-                          <div className="bg-gray-50 p-4 rounded-lg">
-                            <p className="text-sm text-gray-700">
-                              <strong>Explanation:</strong> {question.explanation}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="flex justify-between items-center pt-6 border-t">
-                    {showResults ? (
-                      <>
-                        <div className="flex items-center">
-                          <Brain className="w-5 h-5 text-blue-600 mr-2" />
-                          <span className="font-semibold">
-                            Score: {calculateScore()}%
-                          </span>
-                        </div>
-                        <button
-                          onClick={resetPractice}
-                          className="flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-                        >
-                          <RotateCcw className="w-4 h-4 mr-2" />
-                          Try Again
-                        </button>
-                      </>
-                    ) : (
-                      <button
-                        onClick={handleSubmit}
-                        disabled={!allQuestionsAnswered}
-                        className={`w-full py-3 rounded-lg flex items-center justify-center ${
-                          allQuestionsAnswered
-                            ? 'bg-green-600 text-white hover:bg-green-700'
-                            : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                        }`}
-                      >
-                        Submit Answers
-                        <ChevronRight className="ml-2 w-5 h-5" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <AlertCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold text-gray-600">
-                    Select a case study to begin
-                  </h3>
-                  <p className="text-gray-500 mt-2">
-                    Choose from our collection of real-world scenarios
-                  </p>
-                </div>
-              )}
+        <div className="grid md:grid-cols-3 gap-8">
+          {/* Scenarios Selection */}
+          {!practiceStarted && (
+            <div className="md:col-span-1 space-y-6">
+              <h2 className="font-semibold text-xl text-gray-800">
+                Select a Scenario
+              </h2>
+              
+              <div className="space-y-4">
+                {rcaScenarios.map((scenario) => (
+                  <RcaScenario
+                    key={scenario.id}
+                    scenario={scenario}
+                    isSelected={selectedScenario === scenario.id}
+                    onSelect={handleScenarioSelection}
+                  />
+                ))}
+              </div>
             </div>
+          )}
+
+          {/* Scenario Details or Practice */}
+          <div className={`${practiceStarted ? 'md:col-span-3' : 'md:col-span-2'}`}>
+            {selectedScenario && !practiceStarted ? (
+              // Scenario details and start button
+              <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+                <div className="p-6">
+                  <h2 className="text-2xl font-bold text-gray-800 mb-4">
+                    {getCurrentScenario()?.title}
+                  </h2>
+                  
+                  <div className="bg-blue-50 p-4 rounded-lg mb-6">
+                    <h3 className="font-semibold mb-2">Scenario:</h3>
+                    <p className="text-gray-700">{getCurrentScenario()?.scenario}</p>
+                  </div>
+                  
+                  <div className="bg-gray-50 p-4 rounded-lg mb-6">
+                    <h3 className="font-semibold mb-2 flex items-center">
+                      <CheckCircle2 className="h-5 w-5 text-green-500 mr-2" />
+                      Practice Objectives:
+                    </h3>
+                    <ul className="space-y-2 text-gray-700">
+                      <li className="flex items-start">
+                        <span className="bg-green-100 text-green-800 rounded-full w-5 h-5 flex items-center justify-center text-xs mr-2 mt-0.5">1</span>
+                        <span>Ask clarifying questions to understand the problem scope</span>
+                      </li>
+                      <li className="flex items-start">
+                        <span className="bg-green-100 text-green-800 rounded-full w-5 h-5 flex items-center justify-center text-xs mr-2 mt-0.5">2</span>
+                        <span>Apply appropriate RCA techniques (5 Whys, Fishbone Diagram, etc.)</span>
+                      </li>
+                      <li className="flex items-start">
+                        <span className="bg-green-100 text-green-800 rounded-full w-5 h-5 flex items-center justify-center text-xs mr-2 mt-0.5">3</span>
+                        <span>Identify potential root causes and validate your hypothesis</span>
+                      </li>
+                      <li className="flex items-start">
+                        <span className="bg-green-100 text-green-800 rounded-full w-5 h-5 flex items-center justify-center text-xs mr-2 mt-0.5">4</span>
+                        <span>Recommend corrective actions and preventive measures</span>
+                      </li>
+                    </ul>
+                  </div>
+                  
+                  <button
+                    onClick={handleStartPractice}
+                    className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
+                  >
+                    <BadgeCheck className="h-5 w-5 mr-2" />
+                    Start RCA Practice
+                  </button>
+                </div>
+              </div>
+            ) : !selectedScenario ? (
+              // No scenario selected
+              <div className="bg-white rounded-xl shadow-lg p-8 flex flex-col items-center justify-center text-center h-full">
+                <BrainCircuit className="h-16 w-16 text-gray-300 mb-4" />
+                <h3 className="text-xl font-semibold text-gray-600 mb-2">
+                  Select a scenario to begin
+                </h3>
+                <p className="text-gray-500">
+                  Choose from our collection of realistic product management scenarios
+                </p>
+              </div>
+            ) : (
+              // Practice in progress
+              <div className="h-[calc(100vh-200px)]">
+                <RcaChatInterface 
+                  scenario={getCurrentScenario()?.scenario || ''} 
+                  onComplete={handlePracticeComplete}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>
