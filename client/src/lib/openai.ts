@@ -5,27 +5,27 @@ let openai: OpenAI;
 
 try {
   // Get API key from environment
-  const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+  const apiKey = import.meta.env.VITE_OPENAI_API_KEY || '';
   
-  // Check if API key exists and is not empty
-  if (!apiKey || apiKey === 'sk-YourOpenAIApiKeyHere') {
-    console.error('OpenAI API key is missing or using the placeholder value. Please add your actual API key to the .env file.');
-    // Show a more helpful error in development
-    if (import.meta.env.DEV) {
-      alert('OpenAI API key is missing or invalid. Please check your .env file and add a valid key.');
-    }
+  // Clean the API key in case it has unwanted characters
+  const cleanedApiKey = apiKey.trim().replace(/[\r\n\s]+/g, '');
+  
+  if (!cleanedApiKey) {
+    console.error('OpenAI API key is missing in .env file');
   }
   
-  // Initialize the client even if key is invalid (it will fail gracefully later)
+  // Initialize the client with the API key
   openai = new OpenAI({
-    apiKey: apiKey || 'dummy-key', // Provide a fallback to prevent initialization errors
+    apiKey: cleanedApiKey || 'sk-dummy-key-for-initialization-only',
     dangerouslyAllowBrowser: true, // Enable browser usage
   });
+  
+  console.log("OpenAI client initialization attempted");
 } catch (error) {
   console.error('Failed to initialize OpenAI client:', error);
   // Create a dummy client to prevent app crashes
   openai = new OpenAI({
-    apiKey: 'dummy-key',
+    apiKey: 'sk-dummy-key-for-initialization-only',
     dangerouslyAllowBrowser: true,
   });
 }
@@ -59,9 +59,9 @@ export interface ChatMessage {
  */
 export async function sendMessage(messages: ChatMessage[]): Promise<string> {
   try {
-    // Check if we have a valid API key
-    if (!openai.apiKey || openai.apiKey === 'dummy-key') {
-      return 'API key missing or invalid. Please add your OpenAI API key to the .env file and restart the application.';
+    // Check if we have a valid API key first
+    if (!openai.apiKey || openai.apiKey === 'sk-dummy-key-for-initialization-only') {
+      return 'OpenAI API key is missing or invalid. Please check your .env file and add a valid key.';
     }
     
     const response = await openai.chat.completions.create({
@@ -75,10 +75,14 @@ export async function sendMessage(messages: ChatMessage[]): Promise<string> {
   } catch (error) {
     console.error('Error calling OpenAI API:', error);
     // Provide a more helpful error message
-    if (error instanceof Error && error.message.includes('API key')) {
-      return 'OpenAI API key error: Please check that your API key is valid and properly configured in the .env file.';
+    if (error instanceof Error) {
+      if (error.message.includes('API key')) {
+        return 'OpenAI API key error: The API key provided seems to be invalid. Please check your .env file and ensure the key is correctly formatted.';
+      } else if (error.message.includes('insufficient_quota')) {
+        return 'OpenAI API quota exceeded: Your account has reached its usage limit. Please check your OpenAI account.';
+      }
     }
-    return 'Sorry, there was an error processing your request. Please try again later.';
+    return 'Sorry, there was an error processing your request. Please check the console for more details.';
   }
 }
 
@@ -92,9 +96,9 @@ export async function evaluateRCA(scenario: string, userAnalysis: string): Promi
   ];
 
   try {
-    // Check if we have a valid API key
-    if (!openai.apiKey || openai.apiKey === 'dummy-key') {
-      return 'API key missing or invalid. Please add your OpenAI API key to the .env file and restart the application.';
+    // Check if we have a valid API key first
+    if (!openai.apiKey || openai.apiKey === 'sk-dummy-key-for-initialization-only') {
+      return 'OpenAI API key is missing or invalid. Please check your .env file and add a valid key.';
     }
     
     const response = await openai.chat.completions.create({
@@ -108,9 +112,13 @@ export async function evaluateRCA(scenario: string, userAnalysis: string): Promi
   } catch (error) {
     console.error('Error calling OpenAI API for evaluation:', error);
     // Provide a more helpful error message
-    if (error instanceof Error && error.message.includes('API key')) {
-      return 'OpenAI API key error: Please check that your API key is valid and properly configured in the .env file.';
+    if (error instanceof Error) {
+      if (error.message.includes('API key')) {
+        return 'OpenAI API key error: The API key provided seems to be invalid. Please check your .env file and ensure the key is correctly formatted.';
+      } else if (error.message.includes('insufficient_quota')) {
+        return 'OpenAI API quota exceeded: Your account has reached its usage limit. Please check your OpenAI account.';
+      }
     }
-    return 'Sorry, there was an error processing your analysis. Please try again later.';
+    return 'Sorry, there was an error processing your analysis. Please check the console for more details.';
   }
 } 

@@ -1,5 +1,5 @@
 import { useAuth } from '@clerk/clerk-react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import React, { useEffect, useState } from 'react';
 
 interface ProtectedRouteProps {
@@ -9,6 +9,7 @@ interface ProtectedRouteProps {
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { isLoaded, isSignedIn } = useAuth();
   const [authChecked, setAuthChecked] = useState(false);
+  const location = useLocation();
 
   useEffect(() => {
     // Ensure auth state is loaded before making decisions
@@ -17,6 +18,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     }
   }, [isLoaded]);
 
+  // If auth is still loading, show loading state
   if (!isLoaded) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -28,10 +30,13 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     );
   }
 
+  // If user is not signed in, redirect to sign-in and remember where they were trying to go
   if (authChecked && !isSignedIn) {
-    return <Navigate to="/sign-in" replace />;
+    // Use replace to prevent building up a redirect history
+    return <Navigate to="/sign-in" state={{ from: location.pathname }} replace />;
   }
 
+  // If auth is loaded and user is signed in, render children
   return <>{children}</>;
 };
 

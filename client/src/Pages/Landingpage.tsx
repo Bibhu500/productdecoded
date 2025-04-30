@@ -10,9 +10,13 @@ const LandingPage: React.FC = () => {
 
   const handleGetStarted = () => {
     if (!isLoaded) return; // Don't navigate if auth state isn't loaded
+    
+    // Use a timeout to ensure proper navigation after auth state changes
     if (isSignedIn) {
+      // If already signed in, navigate to dashboard
       navigate('/dashboard');
     } else {
+      // Otherwise navigate to sign-in and handle redirect in ClerkProvider
       navigate('/sign-in');
     }
   };
