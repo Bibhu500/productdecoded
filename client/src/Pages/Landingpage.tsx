@@ -5,15 +5,24 @@ import { useAuth } from '@clerk/clerk-react';
 import { useNavigate } from 'react-router-dom';
 
 const LandingPage: React.FC = () => {
-  const { isSignedIn } = useAuth();
+  const { isSignedIn, isLoaded } = useAuth();
   const navigate = useNavigate();
 
   const handleGetStarted = () => {
+    if (!isLoaded) return; // Don't navigate if auth state isn't loaded
     if (isSignedIn) {
       navigate('/dashboard');
     } else {
       navigate('/sign-in');
     }
+  };
+
+  // Event handler for the "Learn More" button to prevent unintended redirects
+  const handleLearnMore = (e: React.MouseEvent) => {
+    e.preventDefault();
+    // Scroll to the features section instead of navigating
+    const featuresSection = document.querySelector('#features-section');
+    featuresSection?.scrollIntoView({ behavior: 'smooth' });
   };
 
   return (
@@ -39,7 +48,10 @@ const LandingPage: React.FC = () => {
             >
               Get Started <ArrowRight size={20} />
             </button>
-            <button className="border-2 border-blue-600 text-blue-600 px-8 py-3 rounded-lg hover:bg-blue-50 transition-colors">
+            <button 
+              onClick={handleLearnMore}
+              className="border-2 border-blue-600 text-blue-600 px-8 py-3 rounded-lg hover:bg-blue-50 transition-colors"
+            >
               Learn More
             </button>
           </div>
@@ -47,7 +59,7 @@ const LandingPage: React.FC = () => {
       </header>
 
       {/* Features Section */}
-      <section className="bg-white py-20">
+      <section id="features-section" className="bg-white py-20">
         <div className="container mx-auto px-6">
           <h2 className="text-3xl font-bold text-center mb-16">Why Choose Our Platform?</h2>
           <div className="grid md:grid-cols-3 gap-8">
