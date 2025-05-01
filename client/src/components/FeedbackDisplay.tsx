@@ -6,7 +6,7 @@ import {
   ThumbsUp,
   User,
   Calendar,
-  BarChart,
+  
   TrendingUp,
   Award
 } from 'lucide-react';

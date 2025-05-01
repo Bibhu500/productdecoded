@@ -8,7 +8,6 @@ import {
   Users, 
   Zap,
   BarChart,
-  Award,
   Sparkles,
   Star,
   Clock,

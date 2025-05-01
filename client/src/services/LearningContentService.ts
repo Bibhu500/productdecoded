@@ -1,4 +1,4 @@
-import { Brain, Target, Users, BarChart, Search, FileSearch, GitBranch, Workflow } from 'lucide-react';
+import { Brain, Target } from 'lucide-react';
 
 export interface LearningModule {
   id: string;

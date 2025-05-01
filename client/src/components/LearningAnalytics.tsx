@@ -1,12 +1,12 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import {
-  BarChart,
+
   TrendingUp,
   Clock,
-  Calendar,
+ 
   Target,
-  Brain,
+
   Award,
   Star,
   CheckCircle,

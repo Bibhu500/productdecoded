@@ -1,15 +1,15 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import {
-  Trophy,
+  
   Star,
   Target,
-  Brain,
+ 
   Clock,
   Award,
-  TrendingUp,
+
   CheckCircle,
-  Medal,
+  
   Zap
 } from 'lucide-react';
 

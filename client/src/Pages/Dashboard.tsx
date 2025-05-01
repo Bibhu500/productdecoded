@@ -7,12 +7,10 @@ import {
   Target,
   Users,
   Brain,
-  Trophy,
-  Star,
   TrendingUp,
   Award,
   Clock,
-  CheckCircle,
+  
   BarChart,
   Lock
 } from 'lucide-react';

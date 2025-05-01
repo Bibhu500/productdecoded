@@ -4,14 +4,14 @@ import {
   BookOpen,
   ChevronDown,
   Brain,
-  Target,
+  
   ArrowLeft,
   CheckCircle,
   PlayCircle,
   Star,
   Clock,
   Award,
-  BarChart,
+
   Lock,
   Zap
 } from 'lucide-react';

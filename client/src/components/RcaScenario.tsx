@@ -4,12 +4,12 @@ import {
   ArrowLeft,
   Clock,
   CheckCircle,
-  AlertCircle,
-  Brain,
+
+
   Target,
   Send,
-  Loader,
-  MessageSquare
+  Loader
+  
 } from 'lucide-react';
 
 export interface Scenario {
