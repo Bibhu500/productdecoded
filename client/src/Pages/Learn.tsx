@@ -16,58 +16,21 @@ import {
   Zap
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-
-interface LessonProgress {
-  id: string;
-  completed: boolean;
-  timeSpent: number;
-  lastAccessed: string;
-  score?: number;
-}
-
-interface Module {
-  id: string;
-  title: string;
-  description: string;
-  icon: React.ReactNode;
-  requiredLevel?: number;
-  lessons: Lesson[];
-}
-
-interface Lesson {
-  id: string;
-  title: string;
-  duration: string;
-  content: string;
-  type: 'video' | 'text' | 'quiz';
-  points: number;
-}
+import { progressService } from '../services/ProgressService';
+import { learningContentService, LearningModule, Lesson } from '../services/LearningContentService';
+import ReactMarkdown from 'react-markdown';
 
 const Learn: React.FC = () => {
   const navigate = useNavigate();
   const [selectedModule, setSelectedModule] = useState<string | null>(null);
   const [expandedLessons, setExpandedLessons] = useState<string[]>([]);
-  const [progress, setProgress] = useState<LessonProgress[]>([]);
-  const [userLevel, setUserLevel] = useState(1);
-  const [totalPoints, setTotalPoints] = useState(0);
+  const [stats, setStats] = useState(progressService.getStats());
+  const [modules] = useState(learningContentService.getModules());
 
-  // Load progress from localStorage
+  // Update stats when component mounts
   useEffect(() => {
-    const savedProgress = localStorage.getItem('lessonProgress');
-    if (savedProgress) {
-      setProgress(JSON.parse(savedProgress));
-    }
+    setStats(progressService.getStats());
   }, []);
-
-  // Calculate user level and points
-  useEffect(() => {
-    const points = progress.reduce((total, lesson) => {
-      const lessonData = findLessonById(lesson.id);
-      return total + (lesson.completed ? (lessonData?.points || 0) : 0);
-    }, 0);
-    setTotalPoints(points);
-    setUserLevel(Math.floor(points / 100) + 1);
-  }, [progress]);
 
   const toggleLesson = (moduleId: string) => {
     setExpandedLessons(prev => 
@@ -77,115 +40,23 @@ const Learn: React.FC = () => {
     );
   };
 
-  const findLessonById = (lessonId: string): Lesson | undefined => {
-    for (const module of modules) {
-      const lesson = module.lessons.find(l => `${module.id}-${l.id}` === lessonId);
-      if (lesson) return lesson;
-    }
-    return undefined;
-  };
-
   const handleLessonComplete = (moduleId: string, lessonId: string) => {
-    const fullId = `${moduleId}-${lessonId}`;
-    const lesson = findLessonById(fullId);
-    
-    setProgress(prev => {
-      const now = new Date().toISOString();
-      const existing = prev.find(p => p.id === fullId);
-      const updated = existing
-        ? { ...existing, lastAccessed: now }
-        : {
-            id: fullId,
-            completed: true,
-            timeSpent: 0,
-            lastAccessed: now,
-            score: Math.floor(Math.random() * 30) + 70 // Simulated score
-          };
-
-      const newProgress = existing
-        ? prev.map(p => p.id === fullId ? updated : p)
-        : [...prev, updated];
-      
-      localStorage.setItem('lessonProgress', JSON.stringify(newProgress));
-      return newProgress;
-    });
+    progressService.updateLessonProgress(
+      `${moduleId}-${lessonId}`,
+      true,
+      15, // Assuming 15 minutes spent
+      Math.floor(Math.random() * 30) + 70 // Random score between 70-100
+    );
+    setStats(progressService.getStats());
   };
 
-  const getLessonProgress = (moduleId: string, lessonId: string): LessonProgress | undefined => {
-    return progress.find(p => p.id === `${moduleId}-${lessonId}`);
+  const getLessonProgress = (moduleId: string, lessonId: string) => {
+    return progressService.getLessonProgress(`${moduleId}-${lessonId}`);
   };
 
-  const isModuleLocked = (module: Module): boolean => {
-    return (module.requiredLevel || 0) > userLevel;
+  const isModuleLocked = (module: LearningModule): boolean => {
+    return (module.requiredLevel || 0) > stats.level;
   };
-
-  const modules: Module[] = [
-    {
-      id: 'fundamentals',
-      title: 'RCA Fundamentals',
-      description: 'Master the core concepts and principles of Root Cause Analysis',
-      icon: <Brain className="w-6 h-6" />,
-      lessons: [
-        {
-          id: 'intro',
-          title: 'Introduction to RCA',
-          duration: '15 mins',
-          content: 'Understanding what RCA is and why it matters',
-          type: 'video',
-          points: 50
-        },
-        {
-          id: '5-whys',
-          title: 'The 5 Whys Technique',
-          duration: '20 mins',
-          content: 'Learn the fundamental questioning method',
-          type: 'text',
-          points: 75
-        },
-        {
-          id: 'fishbone',
-          title: 'Fishbone Diagram',
-          duration: '25 mins',
-          content: 'Master cause and effect analysis',
-          type: 'quiz',
-          points: 100
-        }
-      ]
-    },
-    {
-      id: 'advanced',
-      title: 'Advanced Techniques',
-      description: 'Deep dive into sophisticated RCA methodologies',
-      icon: <Target className="w-6 h-6" />,
-      requiredLevel: 2,
-      lessons: [
-        {
-          id: 'fta',
-          title: 'Fault Tree Analysis',
-          duration: '30 mins',
-          content: 'Systematic approach to failure analysis',
-          type: 'video',
-          points: 150
-        },
-        {
-          id: 'barriers',
-          title: 'Barrier Analysis',
-          duration: '25 mins',
-          content: 'Understanding preventive and protective measures',
-          type: 'quiz',
-          points: 125
-        },
-        {
-          id: 'pareto',
-          title: 'Pareto Analysis in RCA',
-          duration: '20 mins',
-          content: 'Prioritizing root causes effectively',
-          type: 'text',
-          points: 100
-        }
-      ]
-    }
-  ];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -205,11 +76,11 @@ const Learn: React.FC = () => {
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 bg-blue-100 px-4 py-2 rounded-lg">
                 <Star className="h-5 w-5 text-blue-600" />
-                <span className="font-medium text-blue-600">{totalPoints} XP</span>
+                <span className="font-medium text-blue-600">{stats.totalPoints} XP</span>
               </div>
               <div className="flex items-center gap-2 bg-purple-100 px-4 py-2 rounded-lg">
                 <Award className="h-5 w-5 text-purple-600" />
-                <span className="font-medium text-purple-600">Level {userLevel}</span>
+                <span className="font-medium text-purple-600">Level {stats.level}</span>
               </div>
               <div className="flex items-center">
                 <BookOpen className="h-6 w-6 text-blue-600" />
@@ -249,7 +120,9 @@ const Learn: React.FC = () => {
                         disabled={isLocked}
                       >
                         <div className="flex items-center">
-                          <div className="text-blue-600">{module.icon}</div>
+                          <div className="text-blue-600">
+                            <module.icon className="w-6 h-6" />
+                          </div>
                           <div className="ml-3 text-left">
                             <div className="flex items-center gap-2">
                               <h3 className="font-semibold">{module.title}</h3>
@@ -380,7 +253,7 @@ const Learn: React.FC = () => {
 
 interface LessonContentProps {
   moduleId: string;
-  modules: Module[];
+  modules: LearningModule[];
   onComplete: (moduleId: string, lessonId: string) => void;
 }
 
@@ -419,28 +292,34 @@ const LessonContent: React.FC<LessonContentProps> = ({ moduleId, modules, onComp
           </div>
         )}
         
-        <p className="text-gray-700 mt-4">
-          {lesson.content}
-        </p>
+        <ReactMarkdown>{lesson.content}</ReactMarkdown>
 
-        {/* Example content - In a real app, this would be dynamic */}
-        <h2 className="text-xl font-semibold mt-6">Key Concepts</h2>
-        <ul className="list-disc pl-6 space-y-2">
-          <li>Understanding the difference between symptoms and root causes</li>
-          <li>Identifying contributing factors vs. root causes</li>
-          <li>The importance of evidence-based analysis</li>
-          <li>Systems thinking in RCA</li>
-        </ul>
-
-        {lesson.type === 'quiz' && (
+        {lesson.quiz && (
           <div className="mt-8 p-6 bg-blue-50 rounded-lg">
             <h3 className="text-lg font-semibold text-blue-800 mb-4">Knowledge Check</h3>
-            <p className="text-blue-700">
-              Complete the quiz to test your understanding of the concepts covered in this lesson.
-            </p>
-            <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-              Start Quiz
-            </button>
+            <div className="space-y-6">
+              {lesson.quiz.questions.map((question, index) => (
+                <div key={index} className="space-y-3">
+                  <p className="font-medium text-blue-900">{question.question}</p>
+                  <div className="space-y-2">
+                    {question.options.map((option, optionIndex) => (
+                      <label key={optionIndex} className="flex items-center gap-2 p-2 rounded hover:bg-blue-100 cursor-pointer">
+                        <input
+                          type="radio"
+                          name={`question-${index}`}
+                          value={optionIndex}
+                          className="text-blue-600"
+                        />
+                        <span>{option}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              ))}
+              <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                Submit Quiz
+              </button>
+            </div>
           </div>
         )}
       </div>

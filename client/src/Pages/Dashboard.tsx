@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   BookOpen,
@@ -18,85 +18,20 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '@clerk/clerk-react';
-
-interface Achievement {
-  id: string;
-  title: string;
-  description: string;
-  icon: React.ReactNode;
-  progress: number;
-  unlocked: boolean;
-}
-
-interface ProgressStats {
-  scenariosCompleted: number;
-  totalScenarios: number;
-  averageScore: number;
-  streak: number;
-  timeSpent: string;
-  skillLevel: string;
-}
+import { progressService } from '../services/ProgressService';
+import { learningContentService } from '../services/LearningContentService';
+import UserProgress from '../components/UserProgress';
 
 const Dashboard: React.FC = () => {
   const { user } = useUser();
   const navigate = useNavigate();
-  const [selectedTab, setSelectedTab] = useState<'overview' | 'achievements' | 'progress'>('overview');
+  const [stats, setStats] = useState(progressService.getStats());
+  const [modules] = useState(learningContentService.getModules());
 
-  // Mock data - In a real app, this would come from your backend
-  const progressStats: ProgressStats = {
-    scenariosCompleted: 12,
-    totalScenarios: 50,
-    averageScore: 85,
-    streak: 5,
-    timeSpent: "15h 30m",
-    skillLevel: "Intermediate"
-  };
-
-  const achievements: Achievement[] = [
-    {
-      id: "first-analysis",
-      title: "First Analysis",
-      description: "Complete your first RCA scenario",
-      icon: <Target className="w-6 h-6 text-blue-500" />,
-      progress: 100,
-      unlocked: true
-    },
-    {
-      id: "quick-learner",
-      title: "Quick Learner",
-      description: "Complete 5 scenarios in one day",
-      icon: <Brain className="w-6 h-6 text-purple-500" />,
-      progress: 60,
-      unlocked: false
-    },
-    {
-      id: "expert-analyst",
-      title: "Expert Analyst",
-      description: "Achieve 90%+ score in 10 scenarios",
-      icon: <Trophy className="w-6 h-6 text-yellow-500" />,
-      progress: 30,
-      unlocked: false
-    }
-  ];
-
-  const recentActivity = [
-    {
-      type: "completion",
-      title: "Completed: Product Adoption Decline",
-      score: 92,
-      date: "2 hours ago"
-    },
-    {
-      type: "achievement",
-      title: "Unlocked: First Analysis",
-      date: "1 day ago"
-    },
-    {
-      type: "streak",
-      title: "5 Day Streak!",
-      date: "Today"
-    }
-  ];
+  // Update stats when component mounts
+  useEffect(() => {
+    setStats(progressService.getStats());
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -124,13 +59,13 @@ const Dashboard: React.FC = () => {
             <div className="flex items-center space-x-4">
               <h1 className="text-2xl font-bold text-gray-900">Welcome back, {user?.firstName}!</h1>
               <span className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
-                {progressStats.skillLevel}
+                Level {stats.level}
               </span>
             </div>
             <div className="flex items-center space-x-2">
               <div className="text-right">
                 <p className="text-sm text-gray-600">Current Streak</p>
-                <p className="text-lg font-bold text-blue-600">{progressStats.streak} days</p>
+                <p className="text-lg font-bold text-blue-600">{stats.currentStreak} days</p>
               </div>
               <div className="bg-blue-100 p-2 rounded-full">
                 <TrendingUp className="w-6 h-6 text-blue-600" />
@@ -154,7 +89,7 @@ const Dashboard: React.FC = () => {
               </div>
               <span className="text-sm text-gray-500">Scenarios</span>
             </div>
-            <h3 className="text-2xl font-bold text-gray-900">{progressStats.scenariosCompleted}/{progressStats.totalScenarios}</h3>
+            <h3 className="text-2xl font-bold text-gray-900">{stats.scenariosCompleted}</h3>
             <p className="text-gray-600">Completed</p>
           </motion.div>
 
@@ -168,7 +103,7 @@ const Dashboard: React.FC = () => {
               </div>
               <span className="text-sm text-gray-500">Average Score</span>
             </div>
-            <h3 className="text-2xl font-bold text-gray-900">{progressStats.averageScore}%</h3>
+            <h3 className="text-2xl font-bold text-gray-900">{stats.averageScore}%</h3>
             <p className="text-gray-600">Performance</p>
           </motion.div>
 
@@ -182,7 +117,7 @@ const Dashboard: React.FC = () => {
               </div>
               <span className="text-sm text-gray-500">Time Spent</span>
             </div>
-            <h3 className="text-2xl font-bold text-gray-900">{progressStats.timeSpent}</h3>
+            <h3 className="text-2xl font-bold text-gray-900">{stats.timeSpent}</h3>
             <p className="text-gray-600">Learning</p>
           </motion.div>
 
@@ -196,7 +131,9 @@ const Dashboard: React.FC = () => {
               </div>
               <span className="text-sm text-gray-500">Achievements</span>
             </div>
-            <h3 className="text-2xl font-bold text-gray-900">{achievements.filter(a => a.unlocked).length}/{achievements.length}</h3>
+            <h3 className="text-2xl font-bold text-gray-900">
+              {stats.achievements.filter(a => a.unlocked).length}/{stats.achievements.length}
+            </h3>
             <p className="text-gray-600">Unlocked</p>
           </motion.div>
         </div>
@@ -213,24 +150,25 @@ const Dashboard: React.FC = () => {
               <h2 className="text-2xl font-semibold ml-3">Continue Learning</h2>
             </div>
             <div className="space-y-4">
-              <LearningModule
-                icon={<Target />}
-                title="RCA Fundamentals"
-                description="Core concepts and methodologies"
-                progress={75}
-              />
-              <LearningModule
-                icon={<Brain />}
-                title="Advanced Techniques"
-                description="Tools and frameworks for analysis"
-                progress={30}
-              />
-              <LearningModule
-                icon={<Users />}
-                title="Collaborative Analysis"
-                description="Team-based problem solving"
-                progress={0}
-              />
+              {modules.map(module => {
+                const moduleProgress = module.lessons.filter(lesson => {
+                  const progress = progressService.getLessonProgress(`${module.id}-${lesson.id}`);
+                  return progress?.completed;
+                }).length;
+                const totalLessons = module.lessons.length;
+                const progress = (moduleProgress / totalLessons) * 100;
+
+                return (
+                  <LearningModule
+                    key={module.id}
+                    icon={<module.icon />}
+                    title={module.title}
+                    description={module.description}
+                    progress={progress}
+                    isLocked={module.requiredLevel ? module.requiredLevel > stats.level : false}
+                  />
+                );
+              })}
             </div>
             <button 
               onClick={() => navigate('/learn')}
@@ -269,7 +207,7 @@ const Dashboard: React.FC = () => {
                 title="User Retention Challenge"
                 description="Unlock at level 5"
                 difficulty="Expert"
-                isLocked={true}
+                isLocked={stats.level < 5}
               />
             </div>
             <button 
@@ -280,47 +218,12 @@ const Dashboard: React.FC = () => {
             </button>
           </motion.div>
 
-          {/* Recent Activity */}
+          {/* User Progress */}
           <motion.div
             whileHover={{ y: -5 }}
             className="bg-white rounded-xl shadow-lg p-6"
           >
-            <div className="flex items-center mb-6">
-              <TrendingUp className="h-8 w-8 text-purple-600" />
-              <h2 className="text-2xl font-semibold ml-3">Recent Activity</h2>
-            </div>
-            <div className="space-y-4">
-              {recentActivity.map((activity, index) => (
-                <div key={index} className="flex items-start p-3 border border-gray-100 rounded-lg">
-                  {activity.type === 'completion' && (
-                    <div className="bg-green-100 p-2 rounded-full mr-3">
-                      <CheckCircle className="w-5 h-5 text-green-600" />
-                    </div>
-                  )}
-                  {activity.type === 'achievement' && (
-                    <div className="bg-yellow-100 p-2 rounded-full mr-3">
-                      <Trophy className="w-5 h-5 text-yellow-600" />
-                    </div>
-                  )}
-                  {activity.type === 'streak' && (
-                    <div className="bg-blue-100 p-2 rounded-full mr-3">
-                      <Star className="w-5 h-5 text-blue-600" />
-                    </div>
-                  )}
-                  <div>
-                    <p className="font-medium text-gray-900">{activity.title}</p>
-                    <div className="flex items-center mt-1">
-                      {activity.score && (
-                        <span className="text-sm bg-green-100 text-green-800 px-2 py-0.5 rounded-full mr-2">
-                          Score: {activity.score}%
-                        </span>
-                      )}
-                      <span className="text-sm text-gray-500">{activity.date}</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <UserProgress stats={stats} />
           </motion.div>
         </div>
       </div>
@@ -333,18 +236,29 @@ const LearningModule: React.FC<{
   title: string;
   description: string;
   progress: number;
-}> = ({ icon, title, description, progress }) => (
-  <div className="p-4 border border-gray-100 rounded-lg hover:bg-blue-50 transition-colors cursor-pointer">
+  isLocked?: boolean;
+}> = ({ icon, title, description, progress, isLocked }) => (
+  <div className={`p-4 border border-gray-100 rounded-lg hover:bg-blue-50 transition-colors cursor-pointer ${
+    isLocked ? 'opacity-50 cursor-not-allowed' : ''
+  }`}>
     <div className="flex items-start">
       <div className="text-blue-600">{icon}</div>
       <div className="ml-4 flex-1">
-        <h3 className="font-semibold text-gray-800">{title}</h3>
+        <div className="flex items-center gap-2">
+          <h3 className="font-semibold text-gray-800">{title}</h3>
+          {isLocked && (
+            <Lock className="w-4 h-4 text-gray-400" />
+          )}
+        </div>
         <p className="text-sm text-gray-600 mb-2">{description}</p>
         <div className="w-full bg-gray-200 rounded-full h-2">
           <div 
             className="bg-blue-600 h-2 rounded-full transition-all duration-500"
             style={{ width: `${progress}%` }}
           />
+        </div>
+        <div className="text-xs text-gray-500 mt-1">
+          {Math.round(progress)}% Complete
         </div>
       </div>
     </div>
