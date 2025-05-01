@@ -13,7 +13,7 @@ const RcaChatInterface: React.FC<RcaChatInterfaceProps> = ({ scenario, onComplet
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [submittedAnalysis, setSubmittedAnalysis] = useState(false);
-  const [evaluation, setEvaluation] = useState<string | null>(null);
+  const [_evaluation, setEvaluation] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Initialize chat with system message and introduction

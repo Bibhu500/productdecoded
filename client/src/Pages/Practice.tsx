@@ -15,7 +15,7 @@ const Practice: React.FC = () => {
   const navigate = useNavigate();
   const [selectedScenario, setSelectedScenario] = useState<string | null>(null);
   const [practiceStarted, setPracticeStarted] = useState(false);
-  const [completedEvaluation, setCompletedEvaluation] = useState<string | null>(null);
+  const [_completedEvaluation, setCompletedEvaluation] = useState<string | null>(null);
 
   const handleScenarioSelection = (scenarioId: string) => {
     setSelectedScenario(scenarioId);

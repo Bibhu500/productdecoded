@@ -1,5 +1,5 @@
 import React from 'react';
-import { Brain, TrendingUp, HelpCircle } from 'lucide-react';
+import { TrendingUp, HelpCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export interface RcaScenarioData {
