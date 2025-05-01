@@ -1,39 +1,132 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft,
   BrainCircuit,
   BadgeCheck,
   CheckCircle2,
-  Info
+  Info,
+  Clock,
+  Target,
+  Trophy,
+  Star,
+  AlertCircle
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import RcaScenario, { rcaScenarios, RcaScenarioData } from '../components/RcaScenario';
 import RcaChatInterface from '../components/RcaChatInterface';
+
+interface ScenarioProgress {
+  id: string;
+  bestScore: number;
+  attempts: number;
+  lastAttempt: string;
+  timeSpent: number;
+}
 
 const Practice: React.FC = () => {
   const navigate = useNavigate();
   const [selectedScenario, setSelectedScenario] = useState<string | null>(null);
   const [practiceStarted, setPracticeStarted] = useState(false);
   const [_completedEvaluation, setCompletedEvaluation] = useState<string | null>(null);
+  const [timer, setTimer] = useState<number>(0);
+  const [isTimerActive, setIsTimerActive] = useState(false);
+  const [scenarioProgress, setScenarioProgress] = useState<ScenarioProgress[]>([]);
+  const [showTips, setShowTips] = useState(false);
+
+  // Load progress from localStorage on mount
+  useEffect(() => {
+    const savedProgress = localStorage.getItem('scenarioProgress');
+    if (savedProgress) {
+      setScenarioProgress(JSON.parse(savedProgress));
+    }
+  }, []);
+
+  // Timer logic
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isTimerActive) {
+      interval = setInterval(() => {
+        setTimer((prev) => prev + 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isTimerActive]);
+
+  const formatTime = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   const handleScenarioSelection = (scenarioId: string) => {
     setSelectedScenario(scenarioId);
     setPracticeStarted(false);
     setCompletedEvaluation(null);
+    setTimer(0);
+    setIsTimerActive(false);
   };
 
   const handleStartPractice = () => {
     setPracticeStarted(true);
+    setIsTimerActive(true);
   };
 
   const handlePracticeComplete = (evaluation: string) => {
     setCompletedEvaluation(evaluation);
+    setIsTimerActive(false);
+    
+    // Extract score from evaluation (assuming it's in the format "Score: X%")
+    const scoreMatch = evaluation.match(/Score:\s*(\d+)%/);
+    const score = scoreMatch ? parseInt(scoreMatch[1]) : 0;
+    
+    // Update progress
+    const currentScenario = selectedScenario as string;
+    const now = new Date().toISOString();
+    
+    setScenarioProgress(prev => {
+      const existing = prev.find(p => p.id === currentScenario);
+      const updated = existing
+        ? {
+            ...existing,
+            bestScore: Math.max(existing.bestScore, score),
+            attempts: existing.attempts + 1,
+            lastAttempt: now,
+            timeSpent: existing.timeSpent + timer
+          }
+        : {
+            id: currentScenario,
+            bestScore: score,
+            attempts: 1,
+            lastAttempt: now,
+            timeSpent: timer
+          };
+      
+      const newProgress = existing
+        ? prev.map(p => p.id === currentScenario ? updated : p)
+        : [...prev, updated];
+      
+      // Save to localStorage
+      localStorage.setItem('scenarioProgress', JSON.stringify(newProgress));
+      return newProgress;
+    });
   };
 
   const getCurrentScenario = (): RcaScenarioData | undefined => {
     return rcaScenarios.find(scenario => scenario.id === selectedScenario);
   };
+
+  const getScenarioProgress = (scenarioId: string): ScenarioProgress | undefined => {
+    return scenarioProgress.find(p => p.id === scenarioId);
+  };
+
+  const rcaTips = [
+    "Start by gathering all relevant data before jumping to conclusions",
+    "Use the '5 Whys' technique to dig deeper into the root cause",
+    "Consider multiple potential causes rather than fixating on one",
+    "Look for patterns in user behavior and system interactions",
+    "Validate your assumptions with data whenever possible"
+  ];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -50,9 +143,17 @@ const Practice: React.FC = () => {
                 Back to Dashboard
               </button>
             </div>
-            <div className="flex items-center">
-              <BrainCircuit className="h-6 w-6 text-blue-600" />
-              <span className="ml-2 text-xl font-semibold">RCA Practice</span>
+            <div className="flex items-center gap-4">
+              {practiceStarted && (
+                <div className="flex items-center bg-blue-100 px-4 py-2 rounded-lg">
+                  <Clock className="h-5 w-5 text-blue-600 mr-2" />
+                  <span className="font-medium text-blue-600">{formatTime(timer)}</span>
+                </div>
+              )}
+              <div className="flex items-center">
+                <BrainCircuit className="h-6 w-6 text-blue-600" />
+                <span className="ml-2 text-xl font-semibold">RCA Practice</span>
+              </div>
             </div>
           </div>
         </div>
@@ -75,16 +176,40 @@ const Practice: React.FC = () => {
                 Interact with our AI assistant that simulates real stakeholder conversations.
               </p>
             </div>
-            <div className="mt-4 md:mt-0 bg-blue-50 p-4 rounded-lg flex items-start">
-              <Info className="h-5 w-5 text-blue-500 mr-2 mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="text-sm text-blue-700">
-                  <strong>How it works:</strong> Select a scenario, ask clarifying questions, 
-                  and perform your analysis. The AI will provide guidance and feedback on your approach.
-                </p>
-              </div>
+            <div className="mt-4 md:mt-0">
+              <button
+                onClick={() => setShowTips(!showTips)}
+                className="flex items-center gap-2 bg-blue-50 text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-100 transition-colors"
+              >
+                <Info className="h-5 w-5" />
+                RCA Tips
+              </button>
             </div>
           </div>
+          
+          <AnimatePresence>
+            {showTips && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.3 }}
+                className="mt-6 bg-blue-50 rounded-lg p-6"
+              >
+                <h3 className="font-semibold text-blue-800 mb-4">Pro Tips for Better RCA:</h3>
+                <div className="grid md:grid-cols-2 gap-4">
+                  {rcaTips.map((tip, index) => (
+                    <div key={index} className="flex items-start gap-3">
+                      <div className="bg-blue-100 p-2 rounded-full">
+                        <AlertCircle className="h-4 w-4 text-blue-600" />
+                      </div>
+                      <p className="text-blue-700">{tip}</p>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.div>
 
         <div className="grid md:grid-cols-3 gap-8">
@@ -96,14 +221,36 @@ const Practice: React.FC = () => {
               </h2>
               
               <div className="space-y-4">
-                {rcaScenarios.map((scenario) => (
-                  <RcaScenario
-                    key={scenario.id}
-                    scenario={scenario}
-                    isSelected={selectedScenario === scenario.id}
-                    onSelect={handleScenarioSelection}
-                  />
-                ))}
+                {rcaScenarios.map((scenario) => {
+                  const progress = getScenarioProgress(scenario.id);
+                  return (
+                    <motion.div
+                      key={scenario.id}
+                      whileHover={{ y: -5 }}
+                    >
+                      <RcaScenario
+                        scenario={scenario}
+                        isSelected={selectedScenario === scenario.id}
+                        onSelect={handleScenarioSelection}
+                        progress={progress}
+                      />
+                      {progress && (
+                        <div className="mt-2 px-4 py-2 bg-gray-50 rounded-lg">
+                          <div className="flex items-center justify-between text-sm">
+                            <div className="flex items-center gap-2">
+                              <Trophy className="h-4 w-4 text-yellow-600" />
+                              <span>Best Score: {progress.bestScore}%</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Star className="h-4 w-4 text-purple-600" />
+                              <span>Attempts: {progress.attempts}</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </motion.div>
+                  );
+                })}
               </div>
             </div>
           )}
