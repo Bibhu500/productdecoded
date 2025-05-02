@@ -211,8 +211,8 @@ const LearningAnalytics: React.FC<LearningAnalyticsProps> = ({ data }) => {
                 Your Strengths
               </h4>
               <ul className="space-y-2">
-                {data.insights.strengths.map((strength, index) => (
-                  <li key={index} className="flex items-start gap-2 text-sm text-gray-600">
+                {data.insights.strengths.map(strength => (
+                  <li key={strength} className="flex items-start gap-2 text-sm text-gray-600">
                     <div className="w-1.5 h-1.5 rounded-full bg-green-500 mt-1.5" />
                     {strength}
                   </li>
@@ -225,8 +225,8 @@ const LearningAnalytics: React.FC<LearningAnalyticsProps> = ({ data }) => {
                 Areas to Focus On
               </h4>
               <ul className="space-y-2">
-                {data.insights.areasToImprove.map((area, index) => (
-                  <li key={index} className="flex items-start gap-2 text-sm text-gray-600">
+                {data.insights.areasToImprove.map(area => (
+                  <li key={area} className="flex items-start gap-2 text-sm text-gray-600">
                     <div className="w-1.5 h-1.5 rounded-full bg-yellow-500 mt-1.5" />
                     {area}
                   </li>
@@ -239,9 +239,9 @@ const LearningAnalytics: React.FC<LearningAnalyticsProps> = ({ data }) => {
         <div className="bg-white rounded-xl shadow-sm p-6">
           <h3 className="text-lg font-semibold mb-4">Recommended Next Steps</h3>
           <div className="space-y-4">
-            {data.insights.recommendations.map((recommendation, index) => (
+            {data.insights.recommendations.map(recommendation => (
               <div
-                key={index}
+                key={recommendation}
                 className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg"
               >
                 <div className="bg-blue-100 p-1.5 rounded-full">
