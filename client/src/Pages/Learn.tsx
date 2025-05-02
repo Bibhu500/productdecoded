@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { progressService } from '../services/ProgressService';
-import { learningContentService, LearningModule, Lesson } from '../services/LearningContentService';
+import { learningContentService, LearningModule } from '../services/LearningContentService';
 import ReactMarkdown from 'react-markdown';
 
 const Learn: React.FC = () => {
