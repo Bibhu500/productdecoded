@@ -156,7 +156,7 @@ const LearningAnalytics: React.FC<LearningAnalyticsProps> = ({ data }) => {
               <div className="h-32">
                 {/* Weekly time chart would go here */}
                 <div className="flex items-end h-full gap-2">
-                  {data.timeSpent.byWeek.map((week, index) => (
+                  {data.timeSpent.byWeek.map(week => (
                     <div
                       key={week.week}
                       className="flex-1 bg-blue-100 rounded-t"
