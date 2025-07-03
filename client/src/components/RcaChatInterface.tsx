@@ -146,7 +146,7 @@ What questions do you have about this scenario?`
     <div className="flex flex-col h-full bg-white rounded-xl shadow-lg overflow-hidden">
       <div className="p-4 bg-blue-600 text-white flex items-center">
         <MessageSquare className="h-5 w-5 mr-2" />
-        <h3 className="font-semibold">RCA Practice Assistant</h3>
+        <h3 className="font-semibold">Product Analysis Assistant</h3>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -170,7 +170,7 @@ What questions do you have about this scenario?`
                 }`}
               >
                 <div className="whitespace-pre-wrap">
-                  {message.content.split('### Evaluation of Your RCA\n\n').map((part, i) => {
+                  {message.content.split('### Evaluation of Your Analysis\n\n').map((part, i) => {
                     if (i === 1) {
                       // This is the evaluation part
                       return (
@@ -199,7 +199,7 @@ What questions do you have about this scenario?`
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask questions or share your RCA analysis..."
+              placeholder="Ask questions or share your product analysis..."
               className="flex-1 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               disabled={isLoading}
             />

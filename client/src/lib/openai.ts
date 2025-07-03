@@ -31,7 +31,7 @@ try {
 }
 
 // RCA PM Expert system prompt
-const RCA_PM_SYSTEM_PROMPT = `You are a Product Management expert who specializes in Root Cause Analysis (RCA). 
+const RCA_PM_SYSTEM_PROMPT = `You are a Product Management expert who specializes in Product Problem Analysis. 
 Your role is to help train product managers by simulating realistic RCA scenarios.
 
 You will be given a problem statement about a product issue. You will:

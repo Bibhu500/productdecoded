@@ -239,7 +239,7 @@ const Learn: React.FC = () => {
                     Select a lesson to start learning
                   </h3>
                   <p className="text-gray-500 mt-2">
-                    Choose from our comprehensive modules to begin your RCA journey
+                    Choose from our comprehensive modules to begin your product analysis journey
                   </p>
                 </div>
               )}

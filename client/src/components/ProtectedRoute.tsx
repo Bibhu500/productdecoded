@@ -1,6 +1,7 @@
-import { useAuth } from '@clerk/clerk-react';
+import { useAuth, useUser } from '@clerk/clerk-react';
 import { Navigate, useLocation } from 'react-router-dom';
 import React, { useEffect, useState } from 'react';
+import { syncUserWithDatabase } from '../utils/userSync';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -8,7 +9,9 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { isLoaded, isSignedIn } = useAuth();
+  const { user } = useUser();
   const [authChecked, setAuthChecked] = useState(false);
+  const [userSynced, setUserSynced] = useState(false);
   const location = useLocation();
 
   useEffect(() => {
@@ -17,6 +20,22 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
       setAuthChecked(true);
     }
   }, [isLoaded]);
+
+  useEffect(() => {
+    // Sync user with database when they're signed in and loaded
+    if (isSignedIn && user && !userSynced) {
+      syncUserWithDatabase(user)
+        .then(() => {
+          setUserSynced(true);
+          console.log('✅ User automatically synced with database');
+        })
+        .catch((error) => {
+          console.error('❌ Failed to sync user:', error);
+          // Still allow access even if sync fails
+          setUserSynced(true);
+        });
+    }
+  }, [isSignedIn, user, userSynced]);
 
   // If auth is still loading, show loading state
   if (!isLoaded) {

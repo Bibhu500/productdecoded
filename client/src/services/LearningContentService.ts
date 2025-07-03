@@ -1,4 +1,4 @@
-import { Brain, Target } from 'lucide-react';
+import { Package, Target } from 'lucide-react';
 
 export interface LearningModule {
   id: string;
@@ -109,28 +109,28 @@ export const rcaFramework = {
 export const learningModules: LearningModule[] = [
   {
     id: 'fundamentals',
-    title: 'RCA Fundamentals',
-    description: 'Master the core concepts and principles of Root Cause Analysis',
-    icon: Brain,
+    title: 'Product Analysis Fundamentals',
+    description: 'Master the core concepts and principles of Product Problem Analysis',
+    icon: Package,
     lessons: [
       {
         id: 'intro',
-        title: 'Introduction to RCA',
+        title: 'Introduction to Product Analysis',
         duration: '15 mins',
         type: 'text',
         content: `
-# Introduction to Root Cause Analysis
+# Introduction to Product Problem Analysis
 
-Root Cause Analysis (RCA) is a systematic process for identifying the primary source of a problem. As a Product Manager, mastering RCA is crucial for:
+Product Problem Analysis is a systematic process for identifying the primary source of product issues. As a Product Manager, mastering this approach is crucial for:
 
 - Solving product issues effectively
 - Preventing recurring problems
 - Making data-driven decisions
 - Improving product quality
 
-## What is Root Cause Analysis?
+## What is Product Problem Analysis?
 
-RCA is more than just problem-solving—it's a structured approach to:
+This methodology is more than just problem-solving—it's a structured approach to:
 1. Identify what happened
 2. Understand why it happened
 3. Determine what to do to prevent it from happening again
@@ -143,7 +143,7 @@ RCA is more than just problem-solving—it's a structured approach to:
 4. Consider multiple perspectives
 5. Aim for prevention
 
-## When to Use RCA
+## When to Use Product Analysis
 
 - Product adoption issues
 - User engagement drops
@@ -152,7 +152,7 @@ RCA is more than just problem-solving—it's a structured approach to:
 - Customer complaints
 - System failures
 
-## Benefits of RCA
+## Benefits of Product Analysis
 
 - Prevents recurring issues
 - Saves time and resources

@@ -1,0 +1,13 @@
+# Copy this to .env.local in your Vercel project settings
+
+# Clerk Configuration
+VITE_CLERK_PUBLISHABLE_KEY=pk_test_your_clerk_key_here
+
+# OpenAI Configuration  
+VITE_OPENAI_API_KEY=sk-your_openai_api_key_here
+
+# API Configuration - IMPORTANT: Update this with your Render server URL
+VITE_API_BASE_URL=https://your-render-app-name.onrender.com/api
+
+# Environment
+VITE_ENVIRONMENT=production 
