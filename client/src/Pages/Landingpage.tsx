@@ -90,21 +90,21 @@ const Landingpage: React.FC = () => {
   const testimonials = [
     {
       name: "Sarah Chen",
-      role: "Senior PM at Meta",
+      role: "PM Aspirant",
       image: "/src/assets/priya.jpeg",
-      text: "ProductDecoded transformed my approach to product thinking. The AI simulations feel incredibly realistic and helped me land my dream PM role."
+      text: "While ProductDecoded is a new platform, the case studies are based on real product challenges. The AI simulations helped me understand complex PM scenarios and build confidence for interviews."
     },
     {
       name: "Michael Rodriguez", 
-      role: "Product Lead at Stripe",
+      role: "Product Management Student",
       image: "/src/assets/rahul.jpeg",
-      text: "The structured learning path and practical case studies gave me the confidence to make data-driven product decisions in complex scenarios."
+      text: "The platform might be new, but the real-world case studies and structured learning path gave me practical insights that I couldn't find elsewhere. Perfect for aspiring PMs!"
     },
     {
       name: "Priya Patel",
-      role: "PM at Google",
+      role: "Career Switcher to PM",
       image: "/src/assets/neha.jpg", 
-      text: "The guesstimation and metrics modules were game-changers. I use these frameworks daily in my role as a senior product manager."
+      text: "As someone transitioning into product management, I appreciate that ProductDecoded uses actual industry cases. Even though it's a new platform, the content quality is exceptional."
     }
   ];
 
@@ -196,12 +196,12 @@ const Landingpage: React.FC = () => {
                 <div className="text-sm text-gray-600">Case Studies</div>
               </div>
               <div className="text-center">
-                <div className="text-3xl font-bold text-purple-600">1000+</div>
+                <div className="text-3xl font-bold text-purple-600">100+</div>
                 <div className="text-sm text-gray-600">PM Aspirants</div>
               </div>
               <div className="text-center">
-                <div className="text-3xl font-bold text-green-600">95%</div>
-                <div className="text-sm text-gray-600">Success Rate</div>
+                <div className="text-3xl font-bold text-green-600">200%</div>
+                <div className="text-sm text-gray-600">Improvement rate</div>
               </div>
             </motion.div>
           </div>
