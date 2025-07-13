@@ -134,6 +134,11 @@ class ProgressService {
         existingProgress.bestScore = score;
         this.addXP(Math.floor(score / 10)); // Award XP for improvement
       }
+      // Update completion status based on current best score
+      if (!existingProgress.completed && score >= 70) {
+        existingProgress.completed = true;
+        this.addXP(25); // Bonus XP for first completion
+      }
     } else {
       this.progress.scenarios.push({
         id: scenarioId,
@@ -144,6 +149,9 @@ class ProgressService {
         completed: score >= 70
       });
       this.addXP(10); // Award XP for first attempt
+      if (score >= 70) {
+        this.addXP(25); // Bonus XP for completion on first try
+      }
     }
 
     this.progress.totalTimeSpent += timeSpent;
@@ -336,6 +344,54 @@ class ProgressService {
 
   getLessonProgress(lessonId: string): LessonProgress | undefined {
     return this.progress.lessons.find(l => l.id === lessonId);
+  }
+
+  // Get detailed analytics for dashboard
+  getDetailedAnalytics() {
+    const completedLessons = this.progress.lessons.filter(l => l.completed).length;
+    const completedScenarios = this.progress.scenarios.filter(s => s.completed).length;
+    const totalAttempts = this.progress.scenarios.reduce((sum, s) => sum + s.attempts, 0);
+    const averageScore = this.progress.scenarios.length > 0 
+      ? this.progress.scenarios.reduce((sum, s) => sum + s.bestScore, 0) / this.progress.scenarios.length 
+      : 0;
+
+    return {
+      completedLessons,
+      completedScenarios,
+      totalAttempts,
+      averageScore: Math.round(averageScore),
+      totalTimeSpent: this.progress.totalTimeSpent,
+      currentStreak: this.progress.currentStreak,
+      longestStreak: this.progress.longestStreak,
+      level: this.progress.level,
+      xp: this.progress.xp,
+      achievements: this.progress.achievements
+    };
+  }
+
+  // Get next recommended lesson
+  getNextRecommendedLesson() {
+    // This could be enhanced with ML recommendations
+    // For now, return the first incomplete lesson
+    const incompleteLessons = this.progress.lessons.filter(l => !l.completed);
+    if (incompleteLessons.length > 0) {
+      return incompleteLessons[0];
+    }
+    return null;
+  }
+
+  // Get learning streak information
+  getStreakInfo() {
+    const today = new Date();
+    const lastActive = new Date(this.progress.lastActive);
+    const daysSinceActive = Math.floor((today.getTime() - lastActive.getTime()) / (1000 * 60 * 60 * 24));
+    
+    return {
+      currentStreak: this.progress.currentStreak,
+      longestStreak: this.progress.longestStreak,
+      daysSinceActive,
+      streakAtRisk: daysSinceActive >= 1
+    };
   }
 }
 

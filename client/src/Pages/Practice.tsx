@@ -8,89 +8,353 @@ import {
   Award,
   Star,
   Brain,
-  Users,
-  Lock,
   CheckCircle,
   AlertTriangle,
-  TrendingUp
+  TrendingUp,
+  Calculator,
+  ArrowRight,
+  Trophy
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { progressService } from '../services/ProgressService';
-import RcaScenario from '../components/RcaScenario';
+import { rcaQuestions } from '../data/rcaQuestions';
+import RcaChatInterface from '../components/RcaChatInterface';
 
-interface Scenario {
+interface CaseStudyType {
   id: string;
   title: string;
   description: string;
-  difficulty: 'Beginner' | 'Intermediate' | 'Advanced' | 'Expert';
-  timeLimit: number;
-  points: number;
-  requiredLevel?: number;
   icon: any;
+  color: string;
+  difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
+  questionsCount: number;
+  comingSoon?: boolean;
 }
 
-const scenarios: Scenario[] = [
+const caseStudyTypes: CaseStudyType[] = [
   {
-    id: 'user-retention',
-    title: 'User Retention Drop',
-    description: 'Investigate why user retention has dropped by 25% in the last quarter',
-    difficulty: 'Beginner',
-    timeLimit: 15,
-    points: 100,
-    icon: Users
-  },
-  {
-    id: 'feature-adoption',
-    title: 'Feature Adoption Challenge',
-    description: 'Analyze why the new feature has low adoption rates despite positive beta feedback',
+    id: 'rca',
+    title: 'Root Cause Analysis',
+    description: 'Identify and analyze the root causes of product issues using systematic approaches',
+    icon: AlertTriangle,
+    color: 'blue',
     difficulty: 'Intermediate',
-    timeLimit: 20,
-    points: 150,
-    icon: Target
+    questionsCount: 8
   },
   {
-    id: 'performance-issue',
-    title: 'Performance Degradation',
-    description: 'Identify the root cause of sudden performance degradation in the payment system',
+    id: 'product-sense',
+    title: 'Product Sense',
+    description: 'Develop intuition for product decisions and user behavior analysis',
+    icon: Brain,
+    color: 'purple',
+    difficulty: 'Intermediate',
+    questionsCount: 12,
+    comingSoon: true
+  },
+  {
+    id: 'product-metrics',
+    title: 'Product Metrics',
+    description: 'Learn to define, measure, and interpret key product metrics',
+    icon: BarChart,
+    color: 'green',
+    difficulty: 'Beginner',
+    questionsCount: 10,
+    comingSoon: true
+  },
+  {
+    id: 'market-sizing',
+    title: 'Market Sizing',
+    description: 'Estimate market opportunities and validate product potential',
+    icon: Calculator,
+    color: 'orange',
     difficulty: 'Advanced',
-    timeLimit: 25,
-    points: 200,
-    requiredLevel: 3,
-    icon: TrendingUp
+    questionsCount: 6,
+    comingSoon: true
   },
   {
-    id: 'system-outage',
-    title: 'Critical System Outage',
-    description: 'Investigate a production system outage affecting multiple services',
-    difficulty: 'Expert',
-    timeLimit: 30,
-    points: 300,
-    requiredLevel: 5,
-    icon: AlertTriangle
+    id: 'growth-strategy',
+    title: 'Growth Strategy',
+    description: 'Design and execute strategies to drive product growth',
+    icon: TrendingUp,
+    color: 'pink',
+    difficulty: 'Advanced',
+    questionsCount: 8,
+    comingSoon: true
+  },
+  {
+    id: 'competitive-analysis',
+    title: 'Competitive Analysis',
+    description: 'Analyze competitors and position your product effectively',
+    icon: Target,
+    color: 'indigo',
+    difficulty: 'Intermediate',
+    questionsCount: 7,
+    comingSoon: true
   }
 ];
 
 const Practice: React.FC = () => {
   const navigate = useNavigate();
-  const [selectedScenario, setSelectedScenario] = useState<string | null>(null);
+  const [selectedType, setSelectedType] = useState<string | null>(null);
+  const [selectedRCAQuestion, setSelectedRCAQuestion] = useState<string | null>(null);
   const [stats, setStats] = useState(progressService.getStats());
 
   useEffect(() => {
     setStats(progressService.getStats());
   }, []);
 
-  const handleScenarioComplete = (scenarioId: string, score: number, timeSpent: number) => {
-    progressService.updateScenarioProgress(scenarioId, score, timeSpent);
-    setStats(progressService.getStats());
-    setSelectedScenario(null);
+  const getDifficultyColor = (difficulty: string) => {
+    switch (difficulty) {
+      case 'Beginner': return 'bg-green-100 text-green-800';
+      case 'Intermediate': return 'bg-yellow-100 text-yellow-800';
+      case 'Advanced': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
   };
 
-  const getScenarioProgress = (scenarioId: string) => {
-    return progressService.getScenarioProgress(scenarioId);
+  const getColorClasses = (color: string) => {
+    switch (color) {
+      case 'blue': return 'bg-blue-100 text-blue-600 border-blue-200';
+      case 'purple': return 'bg-purple-100 text-purple-600 border-purple-200';
+      case 'green': return 'bg-green-100 text-green-600 border-green-200';
+      case 'orange': return 'bg-orange-100 text-orange-600 border-orange-200';
+      case 'pink': return 'bg-pink-100 text-pink-600 border-pink-200';
+      case 'indigo': return 'bg-indigo-100 text-indigo-600 border-indigo-200';
+      default: return 'bg-gray-100 text-gray-600 border-gray-200';
+    }
   };
 
-  const isScenarioLocked = (scenario: Scenario): boolean => {
-    return (scenario.requiredLevel || 0) > stats.level;
+  const handleRCAQuestionStart = (questionId: string) => {
+    setSelectedRCAQuestion(questionId);
+  };
+
+  const getQuestionProgress = (questionId: string) => {
+    return progressService.getScenarioProgress(questionId);
+  };
+
+  const getRCATypeProgress = () => {
+    const completedCount = rcaQuestions.filter(q => {
+      const progress = getQuestionProgress(q.id);
+      return progress?.completed;
+    }).length;
+    
+    return {
+      completed: completedCount,
+      total: rcaQuestions.length,
+      percentage: Math.round((completedCount / rcaQuestions.length) * 100)
+    };
+  };
+
+  const renderRCAQuestions = () => {
+    const progress = getRCATypeProgress();
+    
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-800">Root Cause Analysis Questions</h2>
+            <div className="flex items-center gap-4 mt-2">
+              <div className="text-sm text-gray-600">
+                Progress: {progress.completed}/{progress.total} completed ({progress.percentage}%)
+              </div>
+              <div className="w-32 bg-gray-200 rounded-full h-2">
+                <div 
+                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${progress.percentage}%` }}
+                />
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={() => setSelectedType(null)}
+            className="flex items-center text-gray-600 hover:text-blue-600 transition-colors"
+          >
+            <ArrowLeft className="h-5 w-5 mr-2" />
+            Back to Case Studies
+          </button>
+        </div>
+        
+        <div className="grid md:grid-cols-2 gap-6">
+          {rcaQuestions.map((question) => {
+            const questionProgress = getQuestionProgress(question.id);
+            const isCompleted = questionProgress?.completed || false;
+            
+            return (
+              <motion.div
+                key={question.id}
+                whileHover={{ y: -5 }}
+                className={`bg-white rounded-xl shadow-lg p-6 border-2 transition-all duration-200 ${
+                  isCompleted 
+                    ? 'border-green-200 bg-gradient-to-br from-green-50 to-blue-50' 
+                    : 'border-gray-100 hover:border-blue-200'
+                }`}
+              >
+                <div className="flex items-start gap-4">
+                  <div className={`p-3 rounded-lg ${
+                    isCompleted ? 'bg-green-100' : 'bg-blue-100'
+                  }`}>
+                    {isCompleted ? (
+                      <Trophy className="h-6 w-6 text-green-600" />
+                    ) : (
+                      <AlertTriangle className="h-6 w-6 text-blue-600" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h3 className="text-lg font-semibold text-gray-800">{question.title}</h3>
+                      {isCompleted && (
+                        <CheckCircle className="h-5 w-5 text-green-500" />
+                      )}
+                    </div>
+                    
+                    <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+                      {question.problem_statement}
+                    </p>
+                    
+                    <div className="flex items-center gap-3 mb-4">
+                      <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-medium">
+                        Intermediate
+                      </span>
+                      <div className="flex items-center gap-1 text-gray-500 text-sm">
+                        <Clock className="h-4 w-4" />
+                        <span>15-20 min</span>
+                      </div>
+                      {isCompleted && questionProgress && (
+                        <div className="flex items-center gap-1 text-green-600 text-sm">
+                          <Star className="h-4 w-4" />
+                          <span>{questionProgress.bestScore}% score</span>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {isCompleted && questionProgress ? (
+                      <div className="space-y-2 mb-4">
+                        <div className="flex justify-between text-xs text-gray-500">
+                          <span>Best Score: {questionProgress.bestScore}%</span>
+                          <span>Attempts: {questionProgress.attempts}</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div
+                            className="bg-green-600 h-2 rounded-full"
+                            style={{ width: `${questionProgress.bestScore}%` }}
+                          />
+                        </div>
+                      </div>
+                    ) : null}
+                    
+                    <button
+                      onClick={() => handleRCAQuestionStart(question.id)}
+                      className={`w-full py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 ${
+                        isCompleted
+                          ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                          : 'bg-blue-600 text-white hover:bg-blue-700'
+                      }`}
+                    >
+                      {isCompleted ? (
+                        <>
+                          <Trophy className="h-4 w-4" />
+                          Practice Again
+                        </>
+                      ) : (
+                        <>
+                          <Brain className="h-4 w-4" />
+                          Start Analysis
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  const renderCaseStudyTypes = () => {
+    return (
+      <div className="space-y-6">
+        <div className="text-center">
+          <h2 className="text-3xl font-bold text-gray-800 mb-4">Practice Case Studies</h2>
+          <p className="text-gray-600 max-w-2xl mx-auto">
+            Choose from different types of product management case studies to sharpen your skills.
+            Each category focuses on specific PM competencies.
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {caseStudyTypes.map((type) => {
+            const IconComponent = type.icon;
+            const colorClasses = getColorClasses(type.color);
+            
+            // Calculate progress for RCA type
+            let completedCount = 0;
+            let progressPercentage = 0;
+            
+            if (type.id === 'rca') {
+              const rcaProgress = getRCATypeProgress();
+              completedCount = rcaProgress.completed;
+              progressPercentage = rcaProgress.percentage;
+            }
+            
+            return (
+              <motion.div
+                key={type.id}
+                whileHover={{ y: -5 }}
+                className={`bg-white rounded-xl shadow-lg p-6 border-2 ${type.comingSoon ? 'opacity-70' : ''}`}
+              >
+                <div className={`w-12 h-12 rounded-lg ${colorClasses} flex items-center justify-center mb-4`}>
+                  <IconComponent className="h-6 w-6" />
+                </div>
+                
+                <h3 className="text-xl font-semibold text-gray-800 mb-2">{type.title}</h3>
+                <p className="text-gray-600 text-sm mb-4">{type.description}</p>
+                
+                <div className="flex items-center gap-3 mb-4">
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${getDifficultyColor(type.difficulty)}`}>
+                    {type.difficulty}
+                  </span>
+                  <span className="text-gray-500 text-sm">
+                    {type.questionsCount} questions
+                  </span>
+                </div>
+                
+                {/* Progress for RCA */}
+                {type.id === 'rca' && completedCount > 0 && (
+                  <div className="mb-4">
+                    <div className="flex justify-between text-xs text-gray-500 mb-1">
+                      <span>Progress</span>
+                      <span>{completedCount}/{type.questionsCount} completed</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div
+                        className="bg-blue-600 h-2 rounded-full"
+                        style={{ width: `${progressPercentage}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+                
+                {type.comingSoon ? (
+                  <div className="w-full bg-gray-100 text-gray-500 py-2 px-4 rounded-lg text-center font-medium">
+                    Coming Soon
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setSelectedType(type.id)}
+                    className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <span>Start Practice</span>
+                    <ArrowRight className="h-4 w-4" />
+                  </button>
+                )}
+              </motion.div>
+            );
+          })}
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -128,118 +392,20 @@ const Practice: React.FC = () => {
 
       {/* Main Content */}
       <div className="container mx-auto px-6 py-8">
-        {selectedScenario ? (
-          <RcaScenario
-            scenario={scenarios.find(s => s.id === selectedScenario)!}
-            onComplete={handleScenarioComplete}
-            onBack={() => setSelectedScenario(null)}
+        {selectedRCAQuestion ? (
+          <RcaChatInterface
+            rcaTest={rcaQuestions.find(q => q.id === selectedRCAQuestion)!}
+            onComplete={(score, timeSpent) => {
+              progressService.updateScenarioProgress(selectedRCAQuestion, score, timeSpent);
+              setStats(progressService.getStats());
+              setSelectedRCAQuestion(null);
+            }}
+            onBack={() => setSelectedRCAQuestion(null)}
           />
+        ) : selectedType === 'rca' ? (
+          renderRCAQuestions()
         ) : (
-          <div className="grid md:grid-cols-2 gap-8">
-            {scenarios.map(scenario => {
-              const isLocked = isScenarioLocked(scenario);
-              const progress = getScenarioProgress(scenario.id);
-              const Icon = scenario.icon;
-
-              return (
-                <motion.div
-                  key={scenario.id}
-                  whileHover={{ y: -5 }}
-                  className={`bg-white rounded-xl shadow-lg p-6 ${
-                    isLocked ? 'opacity-50' : ''
-                  }`}
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center">
-                      <div className={`p-2 rounded-lg ${
-                        scenario.difficulty === 'Beginner' ? 'bg-green-100' :
-                        scenario.difficulty === 'Intermediate' ? 'bg-yellow-100' :
-                        scenario.difficulty === 'Advanced' ? 'bg-orange-100' :
-                        'bg-red-100'
-                      }`}>
-                        <Icon className={`h-6 w-6 ${
-                          scenario.difficulty === 'Beginner' ? 'text-green-600' :
-                          scenario.difficulty === 'Intermediate' ? 'text-yellow-600' :
-                          scenario.difficulty === 'Advanced' ? 'text-orange-600' :
-                          'text-red-600'
-                        }`} />
-                      </div>
-                      <div className="ml-4">
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-lg font-semibold">{scenario.title}</h3>
-                          {isLocked && (
-                            <div className="flex items-center text-sm text-gray-500">
-                              <Lock className="h-4 w-4 mr-1" />
-                              Level {scenario.requiredLevel}
-                            </div>
-                          )}
-                        </div>
-                        <p className="text-gray-600">{scenario.description}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-4 mb-4">
-                    <div className="flex items-center">
-                      <Clock className="h-5 w-5 text-gray-400 mr-2" />
-                      <span className="text-sm text-gray-600">{scenario.timeLimit} mins</span>
-                    </div>
-                    <div className="flex items-center">
-                      <Star className="h-5 w-5 text-gray-400 mr-2" />
-                      <span className="text-sm text-gray-600">{scenario.points} XP</span>
-                    </div>
-                    <div className="flex items-center">
-                      <BarChart className="h-5 w-5 text-gray-400 mr-2" />
-                      <span className="text-sm text-gray-600">{scenario.difficulty}</span>
-                    </div>
-                  </div>
-
-                  {progress && (
-                    <div className="mb-4">
-                      <div className="flex items-center justify-between text-sm text-gray-600 mb-1">
-                        <span>Best Score</span>
-                        <span className="font-medium text-green-600">{progress.bestScore}%</span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div
-                          className="bg-green-600 h-2 rounded-full"
-                          style={{ width: `${progress.bestScore}%` }}
-                        />
-                      </div>
-                      <div className="flex items-center justify-between mt-2 text-xs text-gray-500">
-                        <span>Attempts: {progress.attempts}</span>
-                        <span>Time Spent: {Math.round(progress.timeSpent)} mins</span>
-                      </div>
-                    </div>
-                  )}
-
-                  <button
-                    onClick={() => !isLocked && setSelectedScenario(scenario.id)}
-                    disabled={isLocked}
-                    className={`w-full py-2 px-4 rounded-lg flex items-center justify-center gap-2 ${
-                      isLocked
-                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                        : progress?.completed
-                        ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                        : 'bg-blue-600 text-white hover:bg-blue-700'
-                    }`}
-                  >
-                    {progress?.completed ? (
-                      <>
-                        <CheckCircle className="h-5 w-5" />
-                        Practice Again
-                      </>
-                    ) : (
-                      <>
-                        <Brain className="h-5 w-5" />
-                        Start Analysis
-                      </>
-                    )}
-                  </button>
-                </motion.div>
-              );
-            })}
-          </div>
+          renderCaseStudyTypes()
         )}
       </div>
     </div>

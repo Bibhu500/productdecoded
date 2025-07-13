@@ -21,6 +21,9 @@ import {
 } from 'lucide-react';
 
 import LogoutButton from '../components/LogoutButton';
+import { progressService } from '../services/ProgressService';
+import { rcaLearningModules } from '../data/rcaLearningModules';
+import { rcaQuestions } from '../data/rcaQuestions';
 
 
 interface DashboardStats {
@@ -52,24 +55,104 @@ const Dashboard: React.FC = () => {
     achievements: []
   });
 
-  useEffect(() => {
-    // Simulate loading user stats
-    const mockStats: DashboardStats = {
-      currentStreak: 7,
-      totalLessonsCompleted: 12,
-      totalScenariosCompleted: 8,
-      averageScore: 87,
-      level: 3,
-      timeSpent: '24h',
-      achievements: [
-        { id: '1', title: 'First Steps', description: 'Complete your first lesson', unlocked: true },
-        { id: '2', title: 'Problem Solver', description: 'Complete 5 RCA scenarios', unlocked: true },
-        { id: '3', title: 'Streak Master', description: 'Maintain 7-day streak', unlocked: true },
-        { id: '4', title: 'Analytics Pro', description: 'Master product metrics', unlocked: false }
-      ]
+  // Function to refresh dashboard data
+  const refreshDashboardData = () => {
+    const realStats = progressService.getStats();
+    
+    // Calculate learning module progress
+    const completedRcaPages = rcaLearningModules.reduce((sum, module) => {
+      return sum + module.pages.filter(page => {
+        const progress = progressService.getLessonProgress(`${module.id}-${page.id}`);
+        return progress?.completed;
+      }).length;
+    }, 0);
+    
+    // Calculate scenario progress
+    const completedScenarios = rcaQuestions.filter(q => {
+      const progress = progressService.getScenarioProgress(q.id);
+      return progress?.completed;
+    }).length;
+    
+    // Calculate average score from completed scenarios
+    const scenarioScores = rcaQuestions
+      .map(q => progressService.getScenarioProgress(q.id))
+      .filter(p => p?.completed && p.bestScore)
+      .map(p => p!.bestScore);
+    const averageScore = scenarioScores.length > 0 
+      ? Math.round(scenarioScores.reduce((sum, score) => sum + score, 0) / scenarioScores.length)
+      : 0;
+    
+    const dashboardStats: DashboardStats = {
+      currentStreak: realStats.currentStreak,
+      totalLessonsCompleted: completedRcaPages,
+      totalScenariosCompleted: completedScenarios,
+      averageScore: averageScore,
+      level: realStats.level,
+      timeSpent: realStats.timeSpent,
+      achievements: realStats.achievements
     };
-    setStats(mockStats);
+    
+    setStats(dashboardStats);
+  };
+
+  useEffect(() => {
+    // Load data on component mount
+    refreshDashboardData();
+    
+    // Refresh data when user returns to the tab/page
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        refreshDashboardData();
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    // Cleanup
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
+
+  // Calculate real progress for skill modules
+  const getRcaProgress = () => {
+    const totalPages = rcaLearningModules.reduce((sum, module) => sum + module.pages.length, 0);
+    const completedPages = rcaLearningModules.reduce((sum, module) => {
+      return sum + module.pages.filter(page => {
+        const progress = progressService.getLessonProgress(`${module.id}-${page.id}`);
+        return progress?.completed;
+      }).length;
+    }, 0);
+    
+    return {
+      total: totalPages,
+      completed: completedPages,
+      progress: totalPages > 0 ? Math.round((completedPages / totalPages) * 100) : 0
+    };
+  };
+
+  const rcaProgress = getRcaProgress();
+
+  // Get next learning recommendation
+  const getNextLearningRecommendation = () => {
+    // Find the first incomplete page in RCA modules
+    for (const module of rcaLearningModules) {
+      for (const page of module.pages) {
+        const progress = progressService.getLessonProgress(`${module.id}-${page.id}`);
+        if (!progress?.completed) {
+          return `${module.title} - ${page.title}`;
+        }
+      }
+    }
+    
+    // If all RCA modules completed
+    if (rcaProgress.completed === rcaProgress.total && rcaProgress.total > 0) {
+      return "🎉 RCA Course Complete! Ready for practice scenarios";
+    }
+    
+    // Default
+    return "Root Cause Analysis - Module 1: Introduction to RCA";
+  };
 
   const skillModules = [
     {
@@ -77,10 +160,10 @@ const Dashboard: React.FC = () => {
       title: 'Root Cause Analysis',
       description: 'Master systematic problem-solving',
       icon: <Brain className="w-6 h-6" />,
-      progress: 75,
+      progress: rcaProgress.progress,
       color: 'from-blue-500 to-blue-600',
-      lessons: 8,
-      completedLessons: 6
+      lessons: rcaProgress.total,
+      completedLessons: rcaProgress.completed
     },
     {
       id: 'product-sense',
@@ -276,7 +359,7 @@ const Dashboard: React.FC = () => {
                   onClick={() => navigate('/learn')}
                   className="text-blue-600 hover:text-blue-700 font-medium text-sm flex items-center space-x-1"
                 >
-                  <span>View All</span>
+                  <span>View All Modules</span>
                   <ArrowUpRight className="w-4 h-4" />
                 </button>
               </div>
@@ -284,7 +367,16 @@ const Dashboard: React.FC = () => {
               <div className="space-y-4">
                 {skillModules.map((module) => (
                   <div key={module.id} className="group cursor-pointer">
-                    <div className="border border-gray-100 rounded-xl p-4 hover:border-blue-200 hover:bg-blue-50/50 transition-all duration-200">
+                    <div 
+                      className="border border-gray-100 rounded-xl p-4 hover:border-blue-200 hover:bg-blue-50/50 transition-all duration-200"
+                      onClick={() => {
+                        if (module.id === 'rca') {
+                          navigate('/learn/rca');
+                        } else {
+                          navigate('/learn');
+                        }
+                      }}
+                    >
                       <div className="flex items-start space-x-3">
                         <div className={`p-2 rounded-lg bg-gradient-to-r ${module.color} text-white`}>
                           {module.icon}
@@ -303,6 +395,9 @@ const Dashboard: React.FC = () => {
                             />
                           </div>
                         </div>
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                          <ArrowUpRight className="w-4 h-4 text-gray-400" />
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -310,11 +405,11 @@ const Dashboard: React.FC = () => {
               </div>
 
               <button
-                onClick={() => navigate('/learn')}
+                onClick={() => navigate('/learn/rca')}
                 className="w-full mt-6 bg-blue-600 text-white py-3 rounded-xl hover:bg-blue-700 transition-colors font-medium flex items-center justify-center space-x-2"
               >
                 <BookOpen className="w-4 h-4" />
-                <span>Continue Learning</span>
+                <span>Continue RCA Learning</span>
               </button>
             </div>
           </motion.div>
@@ -472,11 +567,14 @@ const Dashboard: React.FC = () => {
               <div>
                 <h2 className="text-2xl font-bold mb-2">Continue Where You Left Off</h2>
                 <p className="text-blue-100 mb-4">
-                  Product Sense Fundamentals - Lesson 4: User Empathy
+                  {getNextLearningRecommendation()}
                 </p>
-                <button className="bg-white text-blue-600 px-6 py-2 rounded-lg font-medium hover:bg-gray-50 transition-colors flex items-center space-x-2">
+                <button 
+                  onClick={() => navigate('/learn/rca')}
+                  className="bg-white text-blue-600 px-6 py-2 rounded-lg font-medium hover:bg-gray-50 transition-colors flex items-center space-x-2"
+                >
                   <PlayCircle className="w-4 h-4" />
-                  <span>Resume Learning</span>
+                  <span>Continue Learning</span>
                 </button>
               </div>
               <div className="hidden md:block">
